@@ -4,9 +4,11 @@ import {
   Plus, Minus, X, Divide, 
   Star, Trophy, ChevronRight, 
   BookOpen, Play, CheckCircle2,
-  ArrowLeft, RefreshCcw, Lightbulb, Check
+  ArrowLeft, RefreshCcw, Lightbulb, Check,
+  Sparkles, Loader2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { GoogleGenAI } from "@google/genai";
 import { LEVELS, Level, Operation, UserProgress } from './types';
 import { cn } from './lib/utils';
 
@@ -344,10 +346,45 @@ export default function App() {
   const [questionCount, setQuestionCount] = useState(0);
   const [feedback, setFeedback] = useState<{ type: 'correct' | 'wrong', message: string } | null>(null);
   const [showHint, setShowHint] = useState(false);
+  const [aiHint, setAiHint] = useState<string | null>(null);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [showAiPane, setShowAiPane] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('mathquest_progress', JSON.stringify(progress));
   }, [progress]);
+
+  const getAIHint = async () => {
+    if (!activeLevel || !question) return;
+    
+    setIsAiLoading(true);
+    setShowAiPane(true);
+    setAiHint(null);
+    
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+      const opSymbol = activeLevel.operation === 'addition' ? '+' : 
+                      activeLevel.operation === 'subtraction' ? '-' : 
+                      activeLevel.operation === 'multiplication' ? '×' : 
+                      activeLevel.operation === 'division' ? '÷' : '';
+      
+      const prompt = activeLevel.operation === 'roman' 
+        ? `The student needs to convert the number ${question.n1} into Roman Numerals. Provide a helpful hint and a brief explanation of how Roman Numerals work for this specific number. CRITICAL: Do NOT give the direct answer. Use simple language and emojis. Keep it short.`
+        : `The student is working on a ${activeLevel.operation} problem: ${question.n1} ${opSymbol} ${question.n2}. Provide a helpful hint and a brief explanation to help them solve it. CRITICAL: Do NOT give the direct answer. Use simple language and emojis. Keep it short.`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: prompt,
+      });
+      
+      setAiHint(response.text || "I'm thinking... try visualizing the numbers!");
+    } catch (error) {
+      console.error("AI Hint Error:", error);
+      setAiHint("Oops! My magic wand is a bit dusty. Try counting carefully!");
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
 
   const generateQuestion = (level: Level, diff: number) => {
     let n1 = 0, n2 = 0, n3 = 0, answer = 0;
@@ -1089,12 +1126,18 @@ export default function App() {
                   </div>
 
                   {!feedback && !showHint && (
-                    <div className="pt-4">
+                    <div className="pt-4 flex flex-col sm:flex-row gap-3 justify-center">
                       <button 
                         onClick={() => setShowHint(true)}
-                        className="bg-slate-50 hover:bg-slate-100 text-slate-500 font-bold text-sm px-6 py-3 rounded-full flex items-center gap-2 mx-auto transition-all border border-slate-100"
+                        className="bg-slate-50 hover:bg-slate-100 text-slate-500 font-bold text-sm px-6 py-3 rounded-full flex items-center gap-2 transition-all border border-slate-100"
                       >
-                        <Lightbulb className="w-4 h-4 text-amber-500" /> Need a hint?
+                        <Lightbulb className="w-4 h-4 text-amber-500" /> Visual Hint
+                      </button>
+                      <button 
+                        onClick={getAIHint}
+                        className="bg-emerald-50 hover:bg-emerald-100 text-emerald-600 font-bold text-sm px-6 py-3 rounded-full flex items-center gap-2 transition-all border border-emerald-100"
+                      >
+                        <Sparkles className="w-4 h-4" /> AI Magic Hint
                       </button>
                     </div>
                   )}
@@ -1115,6 +1158,7 @@ export default function App() {
                         type: "spring", 
                         stiffness: 300, 
                         damping: 20,
+                        scale: { duration: 0.4 },
                         rotate: { duration: 0.4, repeat: feedback.type === 'wrong' ? 2 : 0 }
                       }}
                       className={cn(
@@ -1319,6 +1363,94 @@ export default function App() {
           )}
         </AnimatePresence>
       </main>
+
+      {/* AI Hint Side Pane */}
+      <AnimatePresence>
+        {showAiPane && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowAiPane(false)}
+              className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-[60]"
+            />
+            <motion.div 
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl z-[70] flex flex-col"
+            >
+              <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-emerald-50/50">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center text-white shadow-lg">
+                    <Sparkles className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-800">AI Magic Hint</h3>
+                    <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Powered by Gemini</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setShowAiPane(false)}
+                  className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                >
+                  <X className="w-6 h-6 text-slate-400" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-8 space-y-8">
+                {isAiLoading ? (
+                  <div className="flex flex-col items-center justify-center h-full space-y-4 text-slate-400">
+                    <Loader2 className="w-12 h-12 animate-spin text-emerald-500" />
+                    <p className="font-medium animate-pulse">Consulting the math wizards...</p>
+                  </div>
+                ) : (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-6"
+                  >
+                    <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100">
+                      <p className="text-slate-700 leading-relaxed text-lg italic">
+                        "{aiHint}"
+                      </p>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest">How to solve it:</h4>
+                      <div className="space-y-3">
+                        <div className="flex items-start gap-3 text-slate-600">
+                          <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 flex-shrink-0 mt-0.5 text-xs font-bold">1</div>
+                          <p>Read the numbers carefully.</p>
+                        </div>
+                        <div className="flex items-start gap-3 text-slate-600">
+                          <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 flex-shrink-0 mt-0.5 text-xs font-bold">2</div>
+                          <p>Use the hint above to visualize the problem.</p>
+                        </div>
+                        <div className="flex items-start gap-3 text-slate-600">
+                          <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 flex-shrink-0 mt-0.5 text-xs font-bold">3</div>
+                          <p>Pick the answer that matches your result!</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-8">
+                      <button 
+                        onClick={() => setShowAiPane(false)}
+                        className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-2xl transition-all"
+                      >
+                        Got it, thanks!
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Footer / Mobile Nav */}
       <footer className="fixed bottom-0 inset-x-0 bg-white border-t border-slate-100 p-4 md:hidden">
