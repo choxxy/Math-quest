@@ -5,7 +5,7 @@ import {
   Star, Trophy, ChevronRight, 
   BookOpen, Play, CheckCircle2,
   ArrowLeft, RefreshCcw, Lightbulb, Check,
-  Sparkles, Loader2
+  Sparkles, Loader2, Clock, Timer, Zap, GraduationCap
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { GoogleGenAI } from "@google/genai";
@@ -38,6 +38,61 @@ const toRoman = (num: number): string => {
   return roman;
 };
 
+const ClockFace = ({ hours, minutes, size = 200 }: { hours: number, minutes: number, size?: number }) => {
+  const hourAngle = (hours % 12) * 30 + minutes * 0.5;
+  const minuteAngle = minutes * 6;
+
+  return (
+    <div 
+      className="relative rounded-full bg-white border-4 border-slate-800 shadow-inner flex items-center justify-center"
+      style={{ width: size, height: size }}
+    >
+      {/* Numbers */}
+      {[...Array(12)].map((_, i) => {
+        const angle = (i + 1) * 30;
+        const x = Math.sin((angle * Math.PI) / 180) * (size * 0.4);
+        const y = -Math.cos((angle * Math.PI) / 180) * (size * 0.4);
+        return (
+          <div 
+            key={i} 
+            className="absolute text-slate-800 font-black text-sm"
+            style={{ transform: `translate(${x}px, ${y}px)` }}
+          >
+            {i + 1}
+          </div>
+        );
+      })}
+
+      {/* Hour Hand */}
+      <div 
+        className="absolute bg-slate-800 rounded-full origin-bottom"
+        style={{ 
+          width: size * 0.03, 
+          height: size * 0.25, 
+          bottom: '50%', 
+          transform: `rotate(${hourAngle}deg)`,
+          transformOrigin: 'bottom center'
+        }}
+      />
+
+      {/* Minute Hand */}
+      <div 
+        className="absolute bg-emerald-500 rounded-full origin-bottom"
+        style={{ 
+          width: size * 0.02, 
+          height: size * 0.35, 
+          bottom: '50%', 
+          transform: `rotate(${minuteAngle}deg)`,
+          transformOrigin: 'bottom center'
+        }}
+      />
+
+      {/* Center Dot */}
+      <div className="absolute w-1.5 h-1.5 bg-slate-800 rounded-full z-10" />
+    </div>
+  );
+};
+
 const VisualAid = ({ operation, num1, num2, num3 }: { operation: Operation, num1: number, num2: number, num3?: number }) => {
   if (operation === 'roman') {
     return (
@@ -57,6 +112,17 @@ const VisualAid = ({ operation, num1, num2, num3 }: { operation: Operation, num1
           {Array.from({ length: num1 }).map((_, i) => (
             <div key={i} className="w-2 h-2 bg-amber-400 rounded-full" />
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (operation === 'clock') {
+    return (
+      <div className="flex flex-col gap-4 items-center p-6 bg-white rounded-2xl border-2 border-dashed border-sky-100">
+        <ClockFace hours={num1} minutes={num2} />
+        <div className="flex items-center gap-2 mt-2">
+          <div className="px-3 py-1 bg-sky-50 text-sky-600 rounded-lg font-bold text-xs uppercase tracking-wider">Analog Clock</div>
         </div>
       </div>
     );
@@ -190,10 +256,10 @@ const VisualAid = ({ operation, num1, num2, num3 }: { operation: Operation, num1
     return (
       <div className="flex flex-col gap-8 items-center p-6 bg-white rounded-2xl border-2 border-dashed border-cyan-100">
         <div className="flex flex-wrap gap-6 justify-center">
-          {Array.from({ length: num2 }).map((_, groupIdx) => (
+          {Array.from({ length: quotient }).map((_, groupIdx) => (
             <div key={`div-group-${groupIdx}`} className="relative group">
               <div className="w-24 h-24 rounded-full border-2 border-cyan-200 bg-cyan-50/30 flex flex-wrap gap-1 items-center justify-center p-3 transition-transform group-hover:scale-105">
-                 {Array.from({ length: quotient }).map((_, itemIdx) => (
+                 {Array.from({ length: num2 }).map((_, itemIdx) => (
                   <motion.div 
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
@@ -241,6 +307,20 @@ const VisualAid = ({ operation, num1, num2, num3 }: { operation: Operation, num1
     );
   }
 
+  if (operation === 'word-problems') {
+    return (
+      <div className="flex flex-col gap-4 items-center p-6 bg-white rounded-2xl border-2 border-dashed border-rose-100">
+        <div className="flex items-center gap-4 text-rose-500">
+          <BookOpen className="w-12 h-12" />
+          <div className="text-left">
+            <p className="font-black text-xl">Story Helper</p>
+            <p className="text-sm text-slate-500">Look for the numbers: <span className="font-bold text-rose-600">{num1}</span> and <span className="font-bold text-rose-600">{num2}</span>{num3 !== undefined && <> and <span className="font-bold text-rose-600">{num3}</span></>}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return null;
 };
 
@@ -249,7 +329,11 @@ const INTRO_LINKS: Record<Operation, string> = {
   subtraction: 'https://www.youtube.com/watch?v=qM7B2nwpV1M',
   multiplication: 'https://www.youtube.com/watch?v=eW2dRLyoyds',
   division: 'https://www.youtube.com/watch?v=rGMecZ_aERo',
-  roman: 'https://www.youtube.com/watch?v=z1UmAgekzbs'
+  roman: 'https://www.youtube.com/watch?v=z1UmAgekzbs',
+  clock: 'https://www.youtube.com/watch?v=HrxZWNu72WI',
+  series: 'https://www.youtube.com/watch?v=j_vN6y5Qv2Y',
+  'word-problems': 'https://www.youtube.com/watch?v=K3G_vN6y5Qv2Y',
+  exam: 'https://www.youtube.com/watch?v=eW2dRLyoyds'
 };
 
 const OP_DETAILS: Record<Operation, {
@@ -316,6 +400,55 @@ const OP_DETAILS: Record<Operation, {
       "If a smaller symbol is on the left, SUBTRACT it."
     ],
     realWorld: "Used on fancy clocks, at the end of movie credits, and in some book chapters!"
+  },
+  clock: {
+    examples: [
+      { q: "3:00", a: "3:00", explanation: "Short hand on 3, long hand on 12." },
+      { q: "6:30", a: "6:30", explanation: "Short hand between 6 and 7, long hand on 6." }
+    ],
+    tips: [
+      "The short hand is the Hour hand.",
+      "The long hand is the Minute hand.",
+      "Each number on the clock is 5 minutes."
+    ],
+    realWorld: "Used for knowing when school starts, when it's time for dinner, and when your favorite show is on!"
+  },
+  series: {
+    examples: [
+      { q: "2, 4, 6, 8, ?", a: "10", explanation: "Each number is 2 more than the last!" },
+      { q: "10, 20, 30, ?", a: "40", explanation: "Count by 10s!" },
+      { q: "1, 3, 5, 7, ?", a: "9", explanation: "These are odd numbers, adding 2 each time!" }
+    ],
+    tips: [
+      "Find the 'rule' by looking at the first two numbers.",
+      "Check if the numbers are getting bigger or smaller.",
+      "Sometimes the rule is adding, sometimes it's subtracting!"
+    ],
+    realWorld: "Used for predicting patterns, organizing schedules, and understanding how things grow over time!"
+  },
+  'word-problems': {
+    examples: [
+      { q: "Amani has 300 cabbages. He sells 170. How many are left?", a: "130", explanation: "300 - 170 = 130." },
+      { q: "There are 5 boxes with 10 toys each. How many toys?", a: "50", explanation: "5 groups of 10: 5 × 10 = 50." }
+    ],
+    tips: [
+      "Read the story twice to understand what's happening.",
+      "Look for 'clue words' like 'left', 'total', 'each', or 'more'.",
+      "Draw a picture of the story if you're stuck!"
+    ],
+    realWorld: "Used for solving real-life problems at the market, in shops, and when planning events!"
+  },
+  exam: {
+    examples: [
+      { q: "15 + 7", a: "22", explanation: "Basic addition." },
+      { q: "What is IX in numbers?", a: "9", explanation: "Roman numeral conversion." }
+    ],
+    tips: [
+      "Stay calm and read each question carefully.",
+      "Use the visual aids if you get stuck.",
+      "Check your answer before clicking!"
+    ],
+    realWorld: "Exams help us see how much we've learned and where we can improve. They are a great way to celebrate your progress!"
   }
 };
 
@@ -324,7 +457,7 @@ const OP_DETAILS: Record<Operation, {
 export default function App() {
   const [progress, setProgress] = useState<UserProgress>(() => {
     const saved = localStorage.getItem('mathquest_progress');
-    return saved ? JSON.parse(saved) : {
+    const defaultProgress: UserProgress = {
       stars: 0,
       completedLevels: [],
       currentLevelId: {
@@ -332,16 +465,33 @@ export default function App() {
         subtraction: 'sub-1',
         multiplication: 'mul-1',
         division: 'div-1',
-        roman: 'rom-1'
+        roman: 'rom-1',
+        clock: 'clk-1',
+        series: 'ser-1',
+        'word-problems': 'wp-1',
+        exam: 'exam-1'
       }
     };
+
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return {
+        ...defaultProgress,
+        ...parsed,
+        currentLevelId: {
+          ...defaultProgress.currentLevelId,
+          ...parsed.currentLevelId
+        }
+      };
+    }
+    return defaultProgress;
   });
 
   const [activeLevel, setActiveLevel] = useState<Level | null>(null);
   const [selectedOp, setSelectedOp] = useState<Operation | null>(null);
   const [currentDifficulty, setCurrentDifficulty] = useState(1);
   const [gameState, setGameState] = useState<'menu' | 'lesson' | 'practice' | 'complete' | 'op-info'>('menu');
-  const [question, setQuestion] = useState<{ n1: number, n2: number, answer: number, options: number[] } | null>(null);
+  const [question, setQuestion] = useState<{ n1: number, n2: number, answer: any, options: any[], text?: string } | null>(null);
   const [score, setScore] = useState(0);
   const [questionCount, setQuestionCount] = useState(0);
   const [feedback, setFeedback] = useState<{ type: 'correct' | 'wrong', message: string } | null>(null);
@@ -349,6 +499,30 @@ export default function App() {
   const [aiHint, setAiHint] = useState<string | null>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [showAiPane, setShowAiPane] = useState(false);
+  const [questionStartTime, setQuestionStartTime] = useState<number | null>(null);
+  const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [sessionTotalTime, setSessionTotalTime] = useState(0);
+  const [bonusStars, setBonusStars] = useState(0);
+  const [sessionTotalQuestions, setSessionTotalQuestions] = useState(10);
+  const [currentExamOp, setCurrentExamOp] = useState<Operation | null>(null);
+  const totalQuestions = sessionTotalQuestions;
+  const [sessionHistory, setSessionHistory] = useState<{
+    question: any;
+    userAnswer: any;
+    isCorrect: boolean;
+    timeTaken: number;
+  }[]>([]);
+
+  useEffect(() => {
+    let interval: any;
+    if (gameState === 'practice' && questionStartTime && !feedback) {
+      interval = setInterval(() => {
+        setElapsedTime(Math.floor((Date.now() - questionStartTime) / 1000));
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [gameState, questionStartTime, feedback]);
 
   useEffect(() => {
     localStorage.setItem('mathquest_progress', JSON.stringify(progress));
@@ -363,14 +537,19 @@ export default function App() {
     
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-      const opSymbol = activeLevel.operation === 'addition' ? '+' : 
-                      activeLevel.operation === 'subtraction' ? '-' : 
-                      activeLevel.operation === 'multiplication' ? '×' : 
-                      activeLevel.operation === 'division' ? '÷' : '';
+      const currentOp = currentExamOp || activeLevel.operation;
+      const opSymbol = currentOp === 'addition' ? '+' : 
+                      currentOp === 'subtraction' ? '-' : 
+                      currentOp === 'multiplication' ? '×' : 
+                      currentOp === 'division' ? '÷' : '';
       
-      const prompt = activeLevel.operation === 'roman' 
+      const prompt = currentOp === 'roman' 
         ? `The student needs to convert the number ${question.n1} into Roman Numerals. Provide a helpful hint and a brief explanation of how Roman Numerals work for this specific number. CRITICAL: Do NOT give the direct answer. Use simple language and emojis. Keep it short.`
-        : `The student is working on a ${activeLevel.operation} problem: ${question.n1} ${opSymbol} ${question.n2}. Provide a helpful hint and a brief explanation to help them solve it. CRITICAL: Do NOT give the direct answer. Use simple language and emojis. Keep it short.`;
+        : currentOp === 'clock'
+        ? `The student needs to read the time from an analog clock with hours=${question.n1} and minutes=${question.n2}. Provide a helpful hint about where the hands are pointing (e.g., "The short hand is near the ${question.n1}"). CRITICAL: Do NOT give the direct answer. Use simple language and emojis. Keep it short.`
+        : currentOp === 'word-problems'
+        ? `The student is solving a word problem: "${question.text}". Provide a helpful hint to help them understand what operation to use and how to set up the calculation. CRITICAL: Do NOT give the direct answer. Use simple language and emojis. Keep it short.`
+        : `The student is working on a ${currentOp} problem: ${question.n1} ${opSymbol} ${question.n2}. Provide a helpful hint and a brief explanation to help them solve it. CRITICAL: Do NOT give the direct answer. Use simple language and emojis. Keep it short.`;
 
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
@@ -387,10 +566,56 @@ export default function App() {
   };
 
   const generateQuestion = (level: Level, diff: number) => {
-    let n1 = 0, n2 = 0, n3 = 0, answer = 0;
+    let targetLevel = level;
+    let targetDiff = diff;
+
+    if (level.operation === 'exam') {
+      const ops: Operation[] = ['addition', 'subtraction', 'multiplication', 'division', 'roman', 'clock', 'series', 'word-problems'];
+      const randomOp = ops[Math.floor(Math.random() * ops.length)];
+      setCurrentExamOp(randomOp);
+      
+      const opLevels = LEVELS.filter(l => l.operation === randomOp);
+      const filteredLevels = opLevels.filter(l => l.difficulty <= diff);
+      targetLevel = filteredLevels[Math.floor(Math.random() * filteredLevels.length)] || opLevels[0];
+      targetDiff = targetLevel.difficulty;
+    } else {
+      setCurrentExamOp(null);
+    }
+
+    let n1 = 0, n2 = 0, n3 = 0, answer: any = 0;
     // diff is 1, 2, or 3
 
-    if (level.id === 'add-multiple') {
+    if (targetLevel.operation === 'clock') {
+      let h = Math.floor(Math.random() * 12) + 1;
+      let m = 0;
+      if (targetLevel.id === 'clk-1') {
+        m = 0;
+      } else if (targetLevel.id === 'clk-2') {
+        m = [0, 15, 30, 45][Math.floor(Math.random() * 4)];
+      } else {
+        m = Math.floor(Math.random() * 12) * 5;
+      }
+      
+      n1 = h;
+      n2 = m;
+      const formatTime = (hh: number, mm: number) => {
+        const hhStr = hh.toString();
+        const mmStr = mm.toString().padStart(2, '0');
+        return `${hhStr}:${mmStr}`;
+      };
+      answer = formatTime(h, m);
+      
+      const options = new Set<any>([answer]);
+      while (options.size < 4) {
+        let oh = Math.floor(Math.random() * 12) + 1;
+        let om = Math.floor(Math.random() * 12) * 5;
+        options.add(formatTime(oh, om));
+      }
+      setQuestion({ n1, n2, answer, options: Array.from(options).sort(() => Math.random() - 0.5) });
+      return;
+    }
+
+    if (targetLevel.id === 'add-multiple') {
       n1 = Math.floor(Math.random() * 10) + 1;
       n2 = Math.floor(Math.random() * 10) + 1;
       n3 = Math.floor(Math.random() * 10) + 1;
@@ -411,29 +636,29 @@ export default function App() {
       return;
     }
 
-    switch (level.operation) {
+    switch (targetLevel.operation) {
       case 'addition':
-        n1 = Math.floor(Math.random() * (10 * diff)) + 1;
-        n2 = Math.floor(Math.random() * (10 * diff)) + 1;
+        n1 = Math.floor(Math.random() * (10 * targetDiff)) + 1;
+        n2 = Math.floor(Math.random() * (10 * targetDiff)) + 1;
         answer = n1 + n2;
         break;
       case 'subtraction':
-        n1 = Math.floor(Math.random() * (10 * diff)) + 5;
+        n1 = Math.floor(Math.random() * (10 * targetDiff)) + 5;
         n2 = Math.floor(Math.random() * n1) + 1;
         answer = n1 - n2;
         break;
       case 'multiplication':
-        n1 = Math.floor(Math.random() * (diff === 1 ? 5 : 12)) + 1;
-        n2 = Math.floor(Math.random() * (diff === 1 ? 5 : 12)) + 1;
+        n1 = Math.floor(Math.random() * (targetDiff === 1 ? 5 : 12)) + 1;
+        n2 = Math.floor(Math.random() * (targetDiff === 1 ? 5 : 12)) + 1;
         answer = n1 * n2;
         break;
       case 'division':
-        n2 = Math.floor(Math.random() * (diff === 1 ? 5 : 10)) + 1;
-        const baseAnswer = Math.floor(Math.random() * (diff === 1 ? 5 : 10)) + 1;
+        n2 = Math.floor(Math.random() * (targetDiff === 1 ? 5 : 10)) + 1;
+        const baseAnswer = Math.floor(Math.random() * (targetDiff === 1 ? 5 : 10)) + 1;
         n1 = n2 * baseAnswer;
         
         // Add remainders for the "Leftovers" level
-        if (level.id === 'div-3') {
+        if (targetLevel.id === 'div-3') {
           const remainder = Math.floor(Math.random() * (n2 - 1)) + 1;
           n1 += remainder;
         }
@@ -441,11 +666,166 @@ export default function App() {
         answer = Math.floor(n1 / n2);
         break;
       case 'roman':
-        if (level.id === 'rom-1') n1 = Math.floor(Math.random() * 10) + 1;
-        else if (level.id === 'rom-2') n1 = Math.floor(Math.random() * 40) + 10;
-        else n1 = Math.floor(Math.random() * 90) + 10;
-        answer = n1; // The "answer" is the number, but we'll show Roman options
+        if (targetLevel.id === 'rom-1') n1 = Math.floor(Math.random() * 10) + 1;
+        else if (targetLevel.id === 'rom-2') n1 = Math.floor(Math.random() * 40) + 10;
+        else if (targetLevel.id === 'rom-3') n1 = Math.floor(Math.random() * 90) + 10;
+        else n1 = Math.floor(Math.random() * 50) + 1; // rom-4: mix of numbers up to 50
+        answer = n1;
         break;
+      case 'series':
+        if (targetLevel.id === 'ser-1') {
+          // Arrange numbers from least to greatest
+          const count = 4;
+          const nums = Array.from({ length: count }, () => Math.floor(Math.random() * 200) + 1);
+          const sorted = [...nums].sort((a, b) => a - b);
+          n1 = nums as any;
+          answer = sorted.join(', ');
+          
+          const optionsSet = new Set<string>([answer]);
+          while (optionsSet.size < 4) {
+            const shuffled = [...nums].sort(() => Math.random() - 0.5);
+            optionsSet.add(shuffled.join(', '));
+          }
+          setQuestion({
+            n1, n2: 0, answer,
+            options: Array.from(optionsSet).sort(() => Math.random() - 0.5)
+          });
+          setQuestionStartTime(Date.now());
+          setElapsedTime(0);
+          setShowHint(false);
+          return;
+        } else {
+          // What is the next number in the series (ser-2 and ser-3)
+          let start = Math.floor(Math.random() * 20) + 1;
+          let step = Math.floor(Math.random() * 5) + 2;
+          const length = 4;
+          let sequence: number[] = [];
+          let nextNum = 0;
+
+          if (targetLevel.id === 'ser-3') {
+            const patternType = Math.floor(Math.random() * 3);
+            if (patternType === 0) {
+              // Geometric progression
+              start = Math.floor(Math.random() * 5) + 1;
+              step = 2;
+              sequence = Array.from({ length }, (_, i) => start * Math.pow(step, i));
+              nextNum = start * Math.pow(step, length);
+            } else if (patternType === 1) {
+              // Alternating pattern
+              const step2 = Math.floor(Math.random() * 3) + 1;
+              sequence = [];
+              let current = start;
+              for (let i = 0; i < length; i++) {
+                sequence.push(current);
+                current += (i % 2 === 0 ? step : -step2);
+              }
+              nextNum = current;
+            } else {
+              // Increasing step
+              sequence = [];
+              let current = start;
+              let currentStep = step;
+              for (let i = 0; i < length; i++) {
+                sequence.push(current);
+                current += currentStep;
+                currentStep += 1;
+              }
+              nextNum = current;
+            }
+          } else {
+            // Simple arithmetic progression (ser-2)
+            sequence = Array.from({ length }, (_, i) => start + i * step);
+            nextNum = start + length * step;
+          }
+
+          n1 = sequence as any;
+          answer = nextNum;
+          
+          const optionsSet = new Set<number>([answer]);
+          while (optionsSet.size < 4) {
+            const wrong = answer + (Math.floor(Math.random() * 21) - 10);
+            if (wrong >= 0 && wrong !== answer) optionsSet.add(wrong);
+          }
+          setQuestion({
+            n1, n2: 0, answer,
+            options: Array.from(optionsSet).sort(() => Math.random() - 0.5)
+          });
+          setQuestionStartTime(Date.now());
+          setElapsedTime(0);
+          setShowHint(false);
+          return;
+        }
+      case 'word-problems':
+        if (targetLevel.id === 'wp-1') {
+          // Simple addition/subtraction
+          if (Math.random() > 0.5) {
+            // Subtraction (like the user requested)
+            const items = ['cabbages', 'apples', 'marbles', 'toy cars', 'stickers'];
+            const item = items[Math.floor(Math.random() * items.length)];
+            const names = ['Amani', 'Sarah', 'Leo', 'Maya', 'Kojo'];
+            const name = names[Math.floor(Math.random() * names.length)];
+            n1 = Math.floor(Math.random() * 200) + 100;
+            n2 = Math.floor(Math.random() * (n1 - 20)) + 10;
+            answer = n1 - n2;
+            const text = `${name} has ${n1} ${item}. If they sell ${n2} of them, how many are left?`;
+            setQuestion({ n1, n2, answer, options: [], text } as any);
+          } else {
+            // Addition
+            const items = ['balloons', 'books', 'pencils', 'sweets', 'coins'];
+            const item = items[Math.floor(Math.random() * items.length)];
+            const names = ['John', 'Zoe', 'Ken', 'Lila', 'Ben'];
+            const name = names[Math.floor(Math.random() * names.length)];
+            n1 = Math.floor(Math.random() * 100) + 20;
+            n2 = Math.floor(Math.random() * 100) + 20;
+            answer = n1 + n2;
+            const text = `${name} has ${n1} ${item}. Their friend gives them ${n2} more. How many ${item} do they have now?`;
+            setQuestion({ n1, n2, answer, options: [], text } as any);
+          }
+        } else if (targetLevel.id === 'wp-2') {
+          // Multi-step or bigger numbers
+          const items = ['lego bricks', 'trading cards', 'beads', 'stamps'];
+          const item = items[Math.floor(Math.random() * items.length)];
+          n1 = Math.floor(Math.random() * 500) + 200;
+          n2 = Math.floor(Math.random() * 100) + 50;
+          const n3 = Math.floor(Math.random() * 50) + 10;
+          answer = n1 - n2 + n3;
+          const text = `A shop has ${n1} ${item}. They sell ${n2} in the morning and buy ${n3} more in the afternoon. How many ${item} are in the shop now?`;
+          setQuestion({ n1, n2, n3, answer, options: [], text } as any);
+        } else {
+          // Advanced (multiplication/division)
+          if (Math.random() > 0.5) {
+            // Multiplication
+            n1 = Math.floor(Math.random() * 10) + 2;
+            n2 = Math.floor(Math.random() * 12) + 2;
+            answer = n1 * n2;
+            const text = `There are ${n1} boxes. Each box has ${n2} cupcakes. How many cupcakes are there in total?`;
+            setQuestion({ n1, n2, answer, options: [], text } as any);
+          } else {
+            // Division
+            n2 = Math.floor(Math.random() * 8) + 2;
+            const base = Math.floor(Math.random() * 10) + 2;
+            n1 = n2 * base;
+            answer = base;
+            const text = `A teacher has ${n1} pencils to share equally among ${n2} students. How many pencils does each student get?`;
+            setQuestion({ n1, n2, answer, options: [], text } as any);
+          }
+        }
+
+        // Generate options for word problems
+        const optionsSet = new Set<number>([answer]);
+        while (optionsSet.size < 4) {
+          const offset = Math.floor(Math.random() * 21) - 10;
+          const wrong = answer + (offset === 0 ? 1 : offset);
+          if (wrong >= 0 && wrong !== answer) optionsSet.add(wrong);
+        }
+        setQuestion(prev => ({
+          ...prev!,
+          options: Array.from(optionsSet).sort(() => Math.random() - 0.5)
+        }));
+        setQuestionStartTime(Date.now());
+        setElapsedTime(0);
+        setShowHint(false);
+        return;
     }
 
     const options = new Set<number>([answer]);
@@ -459,6 +839,8 @@ export default function App() {
       n1, n2, answer,
       options: Array.from(options).sort(() => Math.random() - 0.5)
     });
+    setQuestionStartTime(Date.now());
+    setElapsedTime(0);
     setShowHint(false);
   };
 
@@ -468,12 +850,22 @@ export default function App() {
     setGameState('lesson');
     setScore(0);
     setQuestionCount(0);
+    setSessionHistory([]);
   };
 
   const startPractice = () => {
     if (!activeLevel) return;
     setScore(0);
     setQuestionCount(0);
+    setSessionHistory([]);
+    setSessionStartTime(Date.now());
+    setBonusStars(0);
+    
+    let tq = activeLevel.operation === 'exam' 
+      ? (activeLevel.id === 'exam-3' ? 20 : Math.floor(Math.random() * 6) + 15) 
+      : (activeLevel.difficulty > 1 ? 10 : 5);
+    setSessionTotalQuestions(tq);
+    
     setGameState('practice');
     generateQuestion(activeLevel, currentDifficulty);
   };
@@ -505,6 +897,8 @@ export default function App() {
       "Keep going! You'll get the next one! 💪"
     ];
 
+    const timeTaken = questionStartTime ? Math.floor((Date.now() - questionStartTime) / 1000) : 0;
+
     if (selected === question.answer) {
       setScore(s => s + 1);
       const msg = correctMessages[Math.floor(Math.random() * correctMessages.length)];
@@ -520,9 +914,16 @@ export default function App() {
       setFeedback({ type: 'wrong', message: `${msg} (The answer was ${question.answer})` });
     }
 
+    setSessionHistory(prev => [...prev, {
+      question: { ...question, operation: activeLevel?.operation, activeLevelId: activeLevel?.id },
+      userAnswer: selected,
+      isCorrect: selected === question.answer,
+      timeTaken
+    }]);
+
     setTimeout(() => {
       setFeedback(null);
-      if (questionCount + 1 >= 5) {
+      if (questionCount + 1 >= totalQuestions) {
         completeLevel();
       } else {
         setQuestionCount(q => q + 1);
@@ -534,13 +935,24 @@ export default function App() {
   const completeLevel = () => {
     if (!activeLevel) return;
     
-    const earnedStars = score >= 4 ? 3 : score >= 3 ? 2 : 1;
+    const earnedStars = score >= (totalQuestions * 0.8) ? 3 : score >= (totalQuestions * 0.6) ? 2 : 1;
+    const totalTime = sessionStartTime ? Math.floor((Date.now() - sessionStartTime) / 1000) : 0;
+    const avgTime = totalTime / totalQuestions;
+    
+    let bonus = 0;
+    if (score === totalQuestions) {
+      if (avgTime < 5) bonus = 2;
+      else if (avgTime < 10) bonus = 1;
+    }
+    
+    setSessionTotalTime(totalTime);
+    setBonusStars(bonus);
     
     setProgress(prev => {
       const isNewCompletion = !prev.completedLevels.includes(activeLevel.id);
       return {
         ...prev,
-        stars: prev.stars + (isNewCompletion ? earnedStars : 0),
+        stars: prev.stars + (isNewCompletion ? earnedStars : 0) + bonus,
         completedLevels: isNewCompletion ? [...prev.completedLevels, activeLevel.id] : prev.completedLevels
       };
     });
@@ -555,6 +967,10 @@ export default function App() {
       case 'multiplication': return <X className="w-6 h-6" />;
       case 'division': return <Divide className="w-6 h-6" />;
       case 'roman': return <span className="text-xl font-serif font-black">IV</span>;
+      case 'clock': return <Clock className="w-6 h-6" />;
+      case 'series': return <div className="flex gap-0.5 font-black text-lg italic tracking-tighter"><span>1</span><span>2</span><span>3</span></div>;
+      case 'word-problems': return <BookOpen className="w-6 h-6" />;
+      case 'exam': return <GraduationCap className="w-6 h-6" />;
     }
   };
 
@@ -597,7 +1013,7 @@ export default function App() {
               </section>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {(['addition', 'subtraction', 'multiplication', 'division', 'roman'] as Operation[]).map((op) => {
+                {(['addition', 'subtraction', 'multiplication', 'division', 'roman', 'clock', 'series', 'word-problems', 'exam'] as Operation[]).map((op) => {
                   const opLevels = LEVELS.filter(l => l.operation === op);
                   const completedInOp = opLevels.filter(l => progress.completedLevels.includes(l.id)).length;
                   
@@ -610,19 +1026,23 @@ export default function App() {
                           op === 'subtraction' ? "bg-rose-500 shadow-rose-100" :
                           op === 'multiplication' ? "bg-purple-500 shadow-purple-100" :
                           op === 'division' ? "bg-cyan-500 shadow-cyan-100" :
-                          "bg-amber-500 shadow-amber-100"
+                          op === 'roman' ? "bg-amber-500 shadow-amber-100" :
+                          op === 'series' ? "bg-indigo-500 shadow-indigo-100" :
+                          op === 'word-problems' ? "bg-rose-600 shadow-rose-100" :
+                          op === 'exam' ? "bg-slate-800 shadow-slate-200" :
+                          "bg-sky-500 shadow-sky-100"
                         )}>
                           {getOpIcon(op)}
                         </div>
                         <div className="text-right">
-                          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Progress</p>
+                          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{op === 'exam' ? 'Final Challenge' : 'Progress'}</p>
                           <p className="text-lg font-bold text-slate-700">{completedInOp}/{opLevels.length}</p>
                         </div>
                       </div>
                       
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <h3 className="text-2xl font-bold capitalize">{op}</h3>
+                          <h3 className="text-2xl font-bold capitalize">{op.replace('-', ' ')}</h3>
                           <button 
                             onClick={(e) => {
                               e.stopPropagation();
@@ -635,7 +1055,9 @@ export default function App() {
                               op === 'subtraction' ? "text-rose-600 border-rose-100 hover:bg-rose-50" :
                               op === 'multiplication' ? "text-purple-600 border-purple-100 hover:bg-purple-50" :
                               op === 'division' ? "text-cyan-600 border-cyan-100 hover:bg-cyan-50" :
-                              "text-amber-600 border-amber-100 hover:bg-amber-50"
+                              op === 'roman' ? "text-amber-600 border-amber-100 hover:bg-amber-50" :
+                              op === 'word-problems' ? "text-rose-600 border-rose-100 hover:bg-rose-50" :
+                              "text-sky-600 border-sky-100 hover:bg-sky-50"
                             )}
                           >
                             <BookOpen className="w-3 h-3" /> Learn More
@@ -984,18 +1406,6 @@ export default function App() {
               className="max-w-2xl mx-auto space-y-8"
             >
               <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                <div className="flex gap-2">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <div 
-                      key={i} 
-                      className={cn(
-                        "w-10 h-2 rounded-full transition-all duration-500",
-                        i < questionCount ? "bg-emerald-500" : "bg-slate-200"
-                      )} 
-                    />
-                  ))}
-                </div>
-                
                 <div className="flex items-center gap-2 bg-white p-1 rounded-xl border border-slate-100 shadow-sm">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2">Difficulty:</span>
                   {[1, 2, 3].map((d) => (
@@ -1014,9 +1424,27 @@ export default function App() {
                   ))}
                 </div>
 
-                <div className="text-sm font-bold text-slate-400 uppercase tracking-widest">
-                  Score: {score}/5
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2 text-slate-400">
+                    <Timer className="w-4 h-4" />
+                    <span className="text-sm font-bold tabular-nums">{elapsedTime}s</span>
+                  </div>
+                  <div className="text-sm font-bold text-slate-400 uppercase tracking-widest">
+                    Score: {score}/{totalQuestions}
+                  </div>
                 </div>
+              </div>
+
+              <div className="flex justify-center gap-2">
+                {Array.from({ length: totalQuestions }).map((_, i) => (
+                  <div 
+                    key={i} 
+                    className={cn(
+                      "w-10 h-2 rounded-full transition-all duration-500",
+                      i < questionCount ? "bg-emerald-500" : "bg-slate-200"
+                    )} 
+                  />
+                ))}
               </div>
 
               <div className="bg-white rounded-[2.5rem] p-10 shadow-xl shadow-slate-200/50 border border-slate-100 space-y-12 relative overflow-hidden">
@@ -1031,7 +1459,7 @@ export default function App() {
                     >
                       <div className="py-4">
                         <VisualAid 
-                          operation={activeLevel.operation} 
+                          operation={currentExamOp || activeLevel.operation} 
                           num1={question.n1} 
                           num2={question.n2} 
                           num3={(question as any).n3} 
@@ -1046,21 +1474,76 @@ export default function App() {
                         {activeLevel.operation === 'addition' && "Count all the circles together to find the total!"}
                         {activeLevel.operation === 'subtraction' && "Count the red circles that are left behind!"}
                         {activeLevel.operation === 'multiplication' && `Count how many groups of ${question.n2} there are!`}
-                        {activeLevel.operation === 'division' && "Count how many dots are in each big circle!"}
+                        {activeLevel.operation === 'division' && `Count how many groups of ${question.n2} there are!`}
                         {activeLevel.operation === 'roman' && "Look at the symbols: I=1, V=5, X=10. Combine them to make the number!"}
+                        {activeLevel.operation === 'clock' && "The short hand is the hour, and the long hand is the minutes!"}
+                        {activeLevel.operation === 'series' && activeLevel.id === 'ser-1' && "Look at the first number of each option. Which one is the smallest?"}
+                        {activeLevel.operation === 'series' && activeLevel.id !== 'ser-1' && "Find the difference between the numbers to see the pattern!"}
+                        {activeLevel.operation === 'word-problems' && "Read the story carefully and find the numbers to use!"}
                       </motion.div>
                     </motion.div>
                   )}
                 </AnimatePresence>
 
                 <div className="text-center space-y-8">
-                  {activeLevel.operation === 'roman' ? (
-                    <div className="space-y-4">
-                      <p className="text-xl font-bold text-slate-500 uppercase tracking-widest">What is this number in Roman Numerals?</p>
-                      <div className="text-8xl font-black text-slate-800">{question.n1}</div>
+                  {(currentExamOp || activeLevel.operation) === 'word-problems' ? (
+                    <div className="space-y-8 max-w-2xl mx-auto">
+                      <p className="text-xl font-bold text-slate-500 uppercase tracking-widest">
+                        {activeLevel.operation === 'exam' ? `Exam Question ${questionCount + 1}` : `Question ${questionCount + 1}: Story Time!`}
+                      </p>
+                      <div className="bg-rose-50 p-8 rounded-[2rem] border-2 border-rose-100 shadow-inner">
+                        <p className="text-3xl font-bold text-slate-800 leading-relaxed">
+                          {question.text}
+                        </p>
+                      </div>
                     </div>
-                  ) : activeLevel.operation !== 'division' && (question.n1 > 9 || question.n2 > 9 || (question as any).n3 !== undefined) ? (
+                  ) : (currentExamOp || activeLevel.operation) === 'roman' ? (
+                    <div className="space-y-4">
+                      <p className="text-xl font-bold text-slate-500 uppercase tracking-widest">
+                        {activeLevel.operation === 'exam' ? `Exam Question ${questionCount + 1}` : `Question ${questionCount + 1}: ${activeLevel.id === 'rom-4' ? 'What is this number?' : 'What is this number in Roman Numerals?'}`}
+                      </p>
+                      <div className="text-8xl font-black text-slate-800">
+                        {((currentExamOp || activeLevel.operation) === 'roman' && (activeLevel.id === 'rom-4' || (activeLevel.operation === 'exam' && Math.random() > 0.5))) ? toRoman(question.n1) : question.n1}
+                      </div>
+                    </div>
+                  ) : (currentExamOp || activeLevel.operation) === 'series' ? (
+                    <div className="space-y-8">
+                      <p className="text-xl font-bold text-slate-500 uppercase tracking-widest">
+                        {activeLevel.operation === 'exam' ? `Exam Question ${questionCount + 1}` : `Question ${questionCount + 1}: ${activeLevel.id === 'ser-1' ? 'Arrange from least to greatest' : 'What is the next number?'}`}
+                      </p>
+                      <div className="flex flex-wrap items-center justify-center gap-4">
+                        {(question.n1 as any as number[]).map((num, i) => (
+                          <React.Fragment key={i}>
+                            <div className="w-24 h-24 bg-indigo-50 rounded-2xl flex items-center justify-center text-3xl font-black text-indigo-600 border-2 border-indigo-100">
+                              {num}
+                            </div>
+                            {i < (question.n1 as any as number[]).length - 1 && (
+                              <div className="text-slate-300 text-2xl">,</div>
+                            )}
+                          </React.Fragment>
+                        ))}
+                        {((activeLevel.operation === 'series' && activeLevel.id !== 'ser-1') || (activeLevel.operation === 'exam' && currentExamOp === 'series')) && (
+                          <>
+                            <div className="text-slate-300 text-2xl">,</div>
+                            <div className="w-24 h-24 bg-slate-50 rounded-2xl flex items-center justify-center text-3xl font-black text-slate-300 border-2 border-dashed border-slate-200">
+                              ?
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ) : (currentExamOp || activeLevel.operation) === 'clock' ? (
+                    <div className="flex flex-col items-center gap-8">
+                      <ClockFace hours={question.n1} minutes={question.n2} size={280} />
+                      <p className="text-2xl font-bold text-slate-500">
+                        {activeLevel.operation === 'exam' ? `Exam Question ${questionCount + 1}: What time is it?` : `Question ${questionCount + 1}: What time is it?`}
+                      </p>
+                    </div>
+                  ) : (currentExamOp || activeLevel.operation) !== 'division' && (question.n1 > 9 || question.n2 > 9 || (question as any).n3 !== undefined) ? (
                     <div className="flex flex-col items-center">
+                      <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-8">
+                        {activeLevel.operation === 'exam' ? `Exam Question ${questionCount + 1}` : `Question ${questionCount + 1}`}
+                      </p>
                       <div className="inline-flex flex-col items-end gap-2 text-7xl font-black text-slate-800 font-mono tracking-tighter">
                         <div className="px-2">{question.n1}</div>
                         {(question as any).n3 !== undefined ? (
@@ -1074,9 +1557,9 @@ export default function App() {
                         ) : (
                           <div className="flex items-center gap-6 border-b-8 border-slate-800 pb-2 px-2">
                             <span className="text-emerald-500 text-5xl">
-                              {activeLevel.operation === 'addition' && '+'}
-                              {activeLevel.operation === 'subtraction' && '-'}
-                              {activeLevel.operation === 'multiplication' && '×'}
+                              {(currentExamOp || activeLevel.operation) === 'addition' && '+'}
+                              {(currentExamOp || activeLevel.operation) === 'subtraction' && '-'}
+                              {(currentExamOp || activeLevel.operation) === 'multiplication' && '×'}
                             </span>
                             <span>{question.n2}</span>
                           </div>
@@ -1085,13 +1568,17 @@ export default function App() {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-center gap-8 text-7xl font-black text-slate-800">
-                      <span>{question.n1}</span>
+                    <div className="space-y-8">
+                      <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">
+                        {activeLevel.operation === 'exam' ? `Exam Question ${questionCount + 1}` : `Question ${questionCount + 1}`}
+                      </p>
+                      <div className="flex items-center justify-center gap-8 text-7xl font-black text-slate-800">
+                        <span>{question.n1}</span>
                       <span className="text-emerald-500">
-                        {activeLevel.operation === 'addition' && '+'}
-                        {activeLevel.operation === 'subtraction' && '-'}
-                        {activeLevel.operation === 'multiplication' && '×'}
-                        {activeLevel.operation === 'division' && '÷'}
+                        {(currentExamOp || activeLevel.operation) === 'addition' && '+'}
+                        {(currentExamOp || activeLevel.operation) === 'subtraction' && '-'}
+                        {(currentExamOp || activeLevel.operation) === 'multiplication' && '×'}
+                        {(currentExamOp || activeLevel.operation) === 'division' && '÷'}
                       </span>
                       <span>{question.n2}</span>
                       {(question as any).n3 !== undefined && (
@@ -1103,7 +1590,8 @@ export default function App() {
                       <span className="text-slate-300">=</span>
                       <span className="text-slate-300">?</span>
                     </div>
-                  )}
+                  </div>
+                )}
 
                   <div className="grid grid-cols-2 gap-4">
                     {question.options.map((opt) => (
@@ -1113,14 +1601,15 @@ export default function App() {
                         disabled={!!feedback}
                         className={cn(
                           "py-8 rounded-3xl text-3xl font-bold transition-all border-2",
-                          activeLevel.operation === 'roman' && "font-serif",
+                          (currentExamOp || activeLevel.operation) === 'roman' && "font-serif",
+                          (currentExamOp || activeLevel.operation) === 'series' && (activeLevel.id === 'ser-1' || activeLevel.operation === 'exam') && "text-lg py-4 px-2",
                           feedback?.type === 'correct' && opt === question.answer ? "bg-emerald-500 border-emerald-500 text-white scale-105" :
                           feedback?.type === 'wrong' && opt === question.answer ? "bg-emerald-500 border-emerald-500 text-white" :
                           feedback?.type === 'wrong' && opt !== question.answer ? "bg-slate-50 border-slate-100 opacity-50" :
                           "bg-white border-slate-100 hover:border-emerald-200 hover:bg-emerald-50 text-slate-700 shadow-sm"
                         )}
                       >
-                        {activeLevel.operation === 'roman' ? toRoman(opt) : opt}
+                        {activeLevel.operation === 'roman' && activeLevel.id !== 'rom-4' ? toRoman(opt) : opt}
                       </button>
                     ))}
                   </div>
@@ -1206,6 +1695,7 @@ export default function App() {
                     selectedOp === 'subtraction' ? "bg-rose-500" :
                     selectedOp === 'multiplication' ? "bg-purple-500" :
                     selectedOp === 'division' ? "bg-cyan-500" :
+                    selectedOp === 'word-problems' ? "bg-rose-600" :
                     "bg-amber-500"
                   )}>
                     {getOpIcon(selectedOp)}
@@ -1229,6 +1719,7 @@ export default function App() {
                         {selectedOp === 'multiplication' && "Multiplication is like a superpower for addition. Instead of adding one by one, we add in groups! It's the key to understanding area, volume, and scaling."}
                         {selectedOp === 'division' && "Division is the art of fair sharing. It helps us split resources equally and understand how many times one number fits into another. It's the opposite of multiplication!"}
                         {selectedOp === 'roman' && "Roman Numerals take us back to ancient history. Learning them helps us understand different ways of thinking about numbers and is still used today on clocks, in books, and for special events!"}
+                        {selectedOp === 'clock' && "Telling time is a fundamental skill for organizing our lives. Understanding the analog clock helps us visualize the passage of time and the relationship between hours and minutes!"}
                       </div>
                     </div>
 
@@ -1281,6 +1772,7 @@ export default function App() {
                         {selectedOp === 'multiplication' && "The '×' symbol was chosen by William Oughtred in 1631 because it looked like a cross!"}
                         {selectedOp === 'division' && "The '÷' symbol is called an 'obelus'. It was first used for division in 1659!"}
                         {selectedOp === 'roman' && "Romans didn't have a symbol for zero. They used the word 'nulla' if they needed to say 'none'!"}
+                        {selectedOp === 'clock' && "The first mechanical clocks were invented in the 14th century, but they were so inaccurate they only had an hour hand!"}
                       </div>
                     </div>
                   </div>
@@ -1334,8 +1826,76 @@ export default function App() {
 
               <div className="space-y-2">
                 <h2 className="text-4xl font-black text-slate-900">Level Complete!</h2>
-                <p className="text-slate-500 text-xl">You got {score} out of 5 correct!</p>
+                <p className="text-slate-500 text-xl">You got {score} out of {totalQuestions} correct!</p>
+                <div className="flex items-center justify-center gap-4 pt-2">
+                  <div className="flex items-center gap-2 text-slate-400 font-bold text-sm">
+                    <Timer className="w-4 h-4" />
+                    {sessionTotalTime}s Total
+                  </div>
+                  {bonusStars > 0 && (
+                    <div className="flex items-center gap-2 text-amber-500 font-bold text-sm bg-amber-50 px-3 py-1 rounded-full border border-amber-100">
+                      <Zap className="w-4 h-4 fill-amber-500" />
+                      +{bonusStars} Speed Bonus!
+                    </div>
+                  )}
+                </div>
               </div>
+
+              {sessionHistory.length > 0 && (
+                <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-4 text-left max-w-sm mx-auto">
+                  <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                    Session Summary
+                  </h3>
+                  <div className="space-y-2">
+                    {sessionHistory.map((item, i) => (
+                      <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
+                        <div className="flex items-center gap-3">
+                          <div className={cn(
+                            "w-6 h-6 rounded-full flex items-center justify-center text-white flex-shrink-0",
+                            item.isCorrect ? "bg-emerald-500" : "bg-rose-500"
+                          )}>
+                            {item.isCorrect ? <Check className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
+                          </div>
+                          <div className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                            <span className="text-slate-400 tabular-nums w-4 shrink-0">{i + 1}.</span>
+                            {item.question.operation === 'roman' ? (
+                              <span>
+                                {item.question.activeLevelId === 'rom-4' ? (
+                                  <>{toRoman(item.question.n1)} <span className="text-slate-400 mx-1">→</span> {item.question.answer}</>
+                                ) : (
+                                  <>{item.question.n1} <span className="text-slate-400 mx-1">→</span> {toRoman(item.question.answer)}</>
+                                )}
+                              </span>
+                            ) : item.question.operation === 'clock' ? (
+                              <span>Clock <span className="text-slate-400 mx-1">→</span> {item.question.answer}</span>
+                            ) : item.question.operation === 'series' ? (
+                              <span>{item.question.activeLevelId === 'ser-1' ? 'Order' : 'Next'} <span className="text-slate-400 mx-1">→</span> {item.question.answer}</span>
+                            ) : (
+                              <span>
+                                {item.question.n1} {
+                                  item.question.operation === 'addition' ? '+' :
+                                  item.question.operation === 'subtraction' ? '-' :
+                                  item.question.operation === 'multiplication' ? '×' :
+                                  item.question.operation === 'division' ? '÷' : ''
+                                } {item.question.n2} {item.question.n3 !== undefined && `+ ${item.question.n3}`} <span className="text-slate-400 mx-1">=</span> {item.question.answer}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-slate-400 font-bold tabular-nums">{item.timeTaken}s</span>
+                          {!item.isCorrect && (
+                            <div className="text-[10px] font-black text-rose-500 uppercase bg-rose-50 px-2 py-1 rounded-md border border-rose-100">
+                              {item.question.operation === 'roman' && item.question.activeLevelId !== 'rom-4' ? toRoman(item.userAnswer) : item.userAnswer}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="flex flex-col gap-4">
                 <button 
